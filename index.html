@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ánh Trăng 11/11 - Gửi một nửa thế giới</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* RESET CƠ BẢN */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body, html {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            /* Nền bầu trời đêm sâu thẳm (Midnight Blue / Deep Space) */
+            background: radial-gradient(ellipse at bottom, #1e293b 0%, #020617 100%);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* LỚP CANVAS RENDER ĐỒ HỌA HẠT */
+        canvas {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+            pointer-events: auto;
+        }
+
+        /* GIAO DIỆN CHÍNH - HIỆU ỨNG GLASSMORPHISM */
+        .glass-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            z-index: 2;
+            width: 90%; max-width: 800px;
+            padding: 50px 30px;
+            text-align: center;
+            /* Hiệu ứng kính mờ ánh xanh bạc */
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(226, 232, 240, 0.15);
+            border-radius: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 
+                        inset 0 0 30px rgba(186, 230, 253, 0.1); /* Phản quang xanh lơ */
+            opacity: 0;
+            animation: cardEntrance 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) 1s forwards;
+            pointer-events: none;
+        }
+
+        /* HIỆU ỨNG CHỮ ÁNH TRĂNG BẠC */
+        h1 {
+            font-family: 'Great Vibes', cursive;
+            font-size: 5rem;
+            margin-bottom: 20px;
+            /* Chữ gradient màu Bạc / Trắng sáng */
+            background: linear-gradient(to right, #94a3b8, #ffffff, #e2e8f0, #ffffff, #64748b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+            animation: floatGlow 4s ease-in-out infinite alternate;
+        }
+
+        .highlight {
+            font-size: 6rem;
+            color: #7dd3fc; /* Màu xanh ngọc (Cyan) của ánh trăng sáng */
+            text-shadow: 0 0 30px rgba(125, 211, 252, 0.6);
+            -webkit-text-fill-color: #7dd3fc;
+        }
+
+        p.subtitle {
+            font-size: 1.2rem;
+            color: #cbd5e1;
+            line-height: 1.8;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 300;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: textFadeIn 2s ease forwards 2.5s;
+        }
+
+        p.message {
+            margin-top: 25px;
+            font-size: 1.1rem;
+            color: #e0f2fe;
+            font-style: italic;
+            opacity: 0;
+            animation: textFadeIn 2s ease forwards 3.5s;
+        }
+
+        /* KEYFRAMES ANIMATION */
+        @keyframes cardEntrance {
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @keyframes textFadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes floatGlow {
+            0% { filter: drop-shadow(0 0 10px rgba(226, 232, 240, 0.3)); transform: translateY(0px); }
+            100% { filter: drop-shadow(0 0 30px rgba(186, 230, 253, 0.7)); transform: translateY(-10px); }
+        }
+
+        /* RESPONSIVE CHO ĐIỆN THOẠI */
+        @media (max-width: 768px) {
+            h1 { font-size: 3.5rem; }
+            .highlight { font-size: 4rem; }
+            p.subtitle { font-size: 0.9rem; }
+            .glass-container { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="moonlightCanvas"></canvas>
+
+    <div class="glass-container">
+        <h1>Ánh Trăng</h1>
+        <p class="subtitle">Dành tặng những vì tinh tú của <span class="highlight">11/11</span></p>
+        <p class="message">"Nhân ngày 8/3, chúc các bạn luôn thanh khiết, rạng ngời và dịu dàng tỏa sáng như ánh trăng đêm rằm. Dù ở đâu cũng sẽ luôn là những phiên bản lấp lánh nhất!"</p>
+    </div>
+
+    <script>
+        /**
+         * LÕI ĐỒ HỌA: MOONLIGHT PARTICLE SYSTEM
+         * Render các mặt trăng khuyết và bụi ánh sáng
+         */
+        const canvas = document.getElementById('moonlightCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particlesArray = [];
+        let trailParticles = [];
+        // Tông màu Bạc, Trắng, Xanh nhạt
+        const colors = ['#ffffff', '#e0f2fe', '#bae6fd', '#f1f5f9', '#e2e8f0'];
+
+        // Vị trí chuột cho hiệu ứng sao chổi
+        let mouse = { x: null, y: null };
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+            // Mỗi lần di chuột tạo ra các hạt bụi ánh trăng
+            for (let i = 0; i < 3; i++) {
+                trailParticles.push(new Trail(mouse.x, mouse.y));
+            }
+        });
+
+        // Hạt nền: Trăng khuyết (Crescent Moons)
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height - canvas.height;
+                this.size = Math.random() * 8 + 3; // Trăng to nhỏ khác nhau
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1.5 + 0.5;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.angle = Math.random() * 360;
+                this.spin = Math.random() < 0.5 ? 0.5 : -0.5; // Xoay rất chậm và lãng mạn
+            }
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                this.angle += this.spin;
+                
+                // Vòng lặp khi rơi khỏi màn hình
+                if (this.y > canvas.height + this.size * 2) {
+                    this.y = -this.size * 2;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle * Math.PI / 180);
+                
+                // THUẬT TOÁN VẼ TRĂNG KHUYẾT (CRESCENT MOON)
+                ctx.beginPath();
+                ctx.moveTo(0, -this.size); // Điểm bắt đầu (đỉnh mặt trăng)
+                // Lưng mặt trăng
+                ctx.bezierCurveTo(this.size * 1.5, -this.size, this.size * 1.5, this.size, 0, this.size);
+                // Bụng mặt trăng (cắt khuyết vào trong)
+                ctx.bezierCurveTo(this.size * 0.4, this.size * 0.8, this.size * 0.4, -this.size * 0.8, 0, -this.size);
+                
+                ctx.fillStyle = this.color;
+                // Hiệu ứng mặt trăng phát sáng
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                ctx.globalAlpha = 0.7; // Độ trong suốt
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        // Hạt vệt chuột (Moonlight Dust)
+        class Trail {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 3 - 1.5;
+                this.speedY = Math.random() * 3 - 1.5;
+                this.life = 100;
+                this.color = '#bae6fd'; // Màu xanh ngọc sáng lấp lánh
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.life -= 2.5; 
+                this.size -= 0.03;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffffff';
+                ctx.globalAlpha = this.life / 100;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size > 0 ? this.size : 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1; // reset alpha
+                ctx.shadowBlur = 0; // reset shadow
+            }
+        }
+
+        // Khởi tạo 80 mặt trăng khuyết (không nên để quá nhiều để giữ vẻ thanh lịch)
+        function initBackground() {
+            particlesArray = [];
+            for (let i = 0; i < 80; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        // Vòng lặp Render
+        function animate() {
+            requestAnimationFrame(animate);
+            // Nền đen mờ để tạo vệt sao băng cho hạt
+            ctx.fillStyle = 'rgba(2, 6, 23, 0.3)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Render các mặt trăng
+            particlesArray.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // Render bụi ánh trăng
+            for (let i = 0; i < trailParticles.length; i++) {
+                trailParticles[i].update();
+                trailParticles[i].draw();
+                if (trailParticles[i].life <= 0 || trailParticles[i].size <= 0) {
+                    trailParticles.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initBackground();
+        });
+
+        initBackground();
+        animate();
+    </script>
+</body>
+</html>
